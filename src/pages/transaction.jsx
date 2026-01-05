@@ -10,29 +10,40 @@ export default function Transactions() {
   const [paymentMethod, setPaymentMethod] = useState("cash");
   const [loading, setLoading] = useState(false);
 
-  /* ================= SEARCH & PAGINATION ================= */
+  /* ================= SEARCH, CATEGORY & PAGINATION ================= */
   const [search, setSearch] = useState("");
-  const [currentPage, setCurrentPage] = useState(1);
-  const ITEMS_PER_PAGE = 5;
+  const [categoryId, setCategoryId] = useState("");
+  const [categories, setCategories] = useState([]);
 
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+
+  /* ================= FETCH CATEGORIES ================= */
   useEffect(() => {
-    api.get("/menus").then((res) => {
-      setMenus(res.data.data ?? res.data);
+    api.get("/categories").then((res) => {
+      setCategories(res.data.data ?? res.data);
     });
   }, []);
 
-  /* ================= FILTER & PAGINATE ================= */
-
-  const filteredMenus = menus.filter((m) =>
-    m.name.toLowerCase().includes(search.toLowerCase())
-  );
-
-  const totalPages = Math.ceil(filteredMenus.length / ITEMS_PER_PAGE);
-
-  const paginatedMenus = filteredMenus.slice(
-    (currentPage - 1) * ITEMS_PER_PAGE,
-    currentPage * ITEMS_PER_PAGE
-  );
+  /* ================= FETCH MENUS ================= */
+  useEffect(() => {
+    api
+      .get("/menus", {
+        params: {
+          page: currentPage,
+          per_page: 8,
+          search,
+          category_id: categoryId || undefined,
+        },
+      })
+      .then((res) => {
+        setMenus(res.data.data);
+        setTotalPages(res.data.meta.last_page);
+      })
+      .catch(() => {
+        alert("Gagal mengambil menu");
+      });
+  }, [currentPage, search, categoryId]);
 
   /* ================= CART LOGIC ================= */
 
@@ -87,7 +98,6 @@ export default function Transactions() {
         state: { total, paymentMethod },
       });
     } catch (err) {
-      console.error(err.response?.data);
       alert("Gagal membuat transaksi");
     } finally {
       setLoading(false);
@@ -98,7 +108,6 @@ export default function Transactions() {
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-
       {/* MENU LIST */}
       <div className="lg:col-span-2 bg-white/5 p-4 rounded-xl">
         <h2 className="font-semibold mb-4">Menu</h2>
@@ -112,11 +121,28 @@ export default function Transactions() {
             setSearch(e.target.value);
             setCurrentPage(1);
           }}
-          className="w-full mb-4 p-2 rounded bg-black/40"
+          className="w-full mb-3 p-2 rounded bg-black/40"
         />
 
+        {/* CATEGORY FILTER */}
+        <select
+          value={categoryId}
+          onChange={(e) => {
+            setCategoryId(e.target.value);
+            setCurrentPage(1);
+          }}
+          className="w-full mb-4 p-2 rounded bg-black/40"
+        >
+          <option value="">Semua Kategori</option>
+          {categories.map((c) => (
+            <option key={c.id} value={c.id}>
+              {c.name}
+            </option>
+          ))}
+        </select>
+
         <div className="space-y-3">
-          {paginatedMenus.map((m) => {
+          {menus.map((m) => {
             const qty = getQty(m.id);
 
             return (
@@ -259,6 +285,4 @@ export default function Transactions() {
       </div>
     </div>
   );
-
-
 }

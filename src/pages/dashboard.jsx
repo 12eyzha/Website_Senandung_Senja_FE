@@ -31,21 +31,25 @@ export default function Dashboard() {
       try {
         const [summaryRes, menuRes, historyRes] = await Promise.all([
           api.get("/transactions/summary"),
-          api.get("/menus"),
+          api.get("/menus"), // ⬅️ PAGINATED ENDPOINT
           api.get("/transactions/history"),
         ]);
 
+        /* ===== SUMMARY ===== */
         if (summaryRes?.data?.data) {
           setSummary(summaryRes.data.data);
         }
 
-        const menus = unwrap(menuRes);
-        setAvailableMenus(Array.isArray(menus) ? menus.length : 0);
+        /* ===== MENU TERSEDIA (FIX DI SINI) ===== */
+        const totalMenus =
+          menuRes?.data?.meta?.total ?? 0; // ✅ AMBIL DARI META, BUKAN data.length
+        setAvailableMenus(totalMenus);
 
+        /* ===== TRANSAKSI TERBARU ===== */
         const history = unwrap(historyRes);
         setRecent(Array.isArray(history) ? history.slice(0, 6) : []);
 
-        // ✅ ADMIN / OWNER ONLY
+        /* ===== MENU POPULER (ADMIN / OWNER) ===== */
         if (role === "admin" || role === "owner") {
           const topRes = await api.get("/dashboard/top-items");
           const items = unwrap(topRes);
@@ -65,7 +69,7 @@ export default function Dashboard() {
     };
 
     loadDashboard();
-  }, [user, role]); // ✅ WAJIB ADA role
+  }, [user, role]); // ✅ role wajib
 
   if (!user) {
     return (

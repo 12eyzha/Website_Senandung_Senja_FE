@@ -29,9 +29,9 @@ export default function History() {
     if (!reason) return;
 
     try {
-      await api.patch(`/transactions/${id}/cancel`, {
-        cancel_reason: reason,
-      });
+       await api.patch(`/admin/transactions/${id}/cancel`, {
+    cancel_reason: reason,
+  });
       alert("Transaksi berhasil dibatalkan");
       fetchHistory();
     } catch (err) {

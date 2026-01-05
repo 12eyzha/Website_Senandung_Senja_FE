@@ -111,9 +111,6 @@ export default function Sidebar({ collapsed }) {
                 <NavLink to="master/karyawan" className={subLinkClass}>
                   Data Karyawan
                 </NavLink>
-                <NavLink to="master/pelanggan" className={subLinkClass}>
-                  Data Pelanggan
-                </NavLink>
                 <NavLink to="master/menu" className={subLinkClass}>
                   Data Menu
                 </NavLink>

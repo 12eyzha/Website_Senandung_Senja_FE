@@ -6,12 +6,17 @@ export default function Menu() {
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
 
+  // pagination
+  const [page, setPage] = useState(1);
+  const [lastPage, setLastPage] = useState(1);
+
   const [showCreate, setShowCreate] = useState(false);
   const [showEdit, setShowEdit] = useState(false);
 
   const emptyForm = {
     id: "",
     name: "",
+    description: "",
     category_id: "",
     price: "",
     is_available: true,
@@ -22,15 +27,21 @@ export default function Menu() {
   /* ================= FETCH ================= */
 
   useEffect(() => {
-    fetchMenus();
+    fetchMenus(page);
     fetchCategories();
-  }, []);
+  }, [page]);
 
-  const fetchMenus = async () => {
+  const fetchMenus = async (pageNumber = 1) => {
     try {
-      const res = await api.get("/admin/menus");
-      setMenus(res.data.data ?? res.data);
-    } catch {
+      const res = await api.get("/admin/menus", {
+        params: { page: pageNumber },
+      });
+
+      setMenus(res.data.data);
+      setPage(res.data.current_page);
+      setLastPage(res.data.last_page);
+    } catch (err) {
+      console.error(err);
       alert("Gagal mengambil menu");
     } finally {
       setLoading(false);
@@ -51,7 +62,7 @@ export default function Menu() {
   const toggleAvailable = async (id) => {
     try {
       await api.patch(`/admin/menus/${id}/toggle`);
-      fetchMenus();
+      fetchMenus(page);
     } catch {
       alert("Gagal update status");
     }
@@ -61,7 +72,7 @@ export default function Menu() {
     if (!confirm("Yakin hapus menu?")) return;
     try {
       await api.delete(`/admin/menus/${id}`);
-      fetchMenus();
+      fetchMenus(page);
     } catch {
       alert("Gagal hapus menu");
     }
@@ -71,6 +82,7 @@ export default function Menu() {
     setForm({
       id: menu.id,
       name: menu.name,
+      description: menu.description ?? "",
       category_id: menu.category_id,
       price: menu.price,
       is_available: !!menu.is_available,
@@ -83,13 +95,15 @@ export default function Menu() {
     try {
       await api.post("/admin/menus", {
         name: form.name,
+        description: form.description,
         category_id: form.category_id,
         price: form.price,
         is_available: form.is_available ? 1 : 0,
       });
       setShowCreate(false);
       setForm(emptyForm);
-      fetchMenus();
+      fetchMenus(1); // balik ke page 1
+      setPage(1);
     } catch {
       alert("Gagal tambah menu");
     }
@@ -100,13 +114,14 @@ export default function Menu() {
     try {
       await api.put(`/admin/menus/${form.id}`, {
         name: form.name,
+        description: form.description,
         category_id: form.category_id,
         price: form.price,
         is_available: form.is_available ? 1 : 0,
       });
       setShowEdit(false);
       setForm(emptyForm);
-      fetchMenus();
+      fetchMenus(page);
     } catch {
       alert("Gagal update menu");
     }
@@ -143,6 +158,7 @@ export default function Menu() {
           <thead className="bg-zinc-800 text-white">
             <tr>
               <th className="px-4 py-3 text-left">Nama</th>
+              <th className="px-4 py-3 text-left">Deskripsi</th>
               <th className="px-4 py-3 text-left">Kategori</th>
               <th className="px-4 py-3 text-left">Harga</th>
               <th className="px-4 py-3 text-center">Status</th>
@@ -157,6 +173,9 @@ export default function Menu() {
                 className="border-t border-white/10 hover:bg-white/5"
               >
                 <td className="px-4 py-3">{menu.name}</td>
+                <td className="px-4 py-3 text-xs text-white/70">
+                  {menu.description || "—"}
+                </td>
                 <td className="px-4 py-3">{menu.category?.name}</td>
                 <td className="px-4 py-3">
                   Rp {Number(menu.price).toLocaleString("id-ID")}
@@ -192,6 +211,31 @@ export default function Menu() {
             ))}
           </tbody>
         </table>
+      </div>
+
+      {/* PAGINATION */}
+      <div className="flex justify-between items-center pt-4">
+        <p className="text-sm text-white/60">
+          Page {page} dari {lastPage}
+        </p>
+
+        <div className="space-x-2">
+          <button
+            disabled={page === 1}
+            onClick={() => setPage(page - 1)}
+            className="px-3 py-1 rounded bg-white/10 disabled:opacity-40"
+          >
+            Prev
+          </button>
+
+          <button
+            disabled={page === lastPage}
+            onClick={() => setPage(page + 1)}
+            className="px-3 py-1 rounded bg-white/10 disabled:opacity-40"
+          >
+            Next
+          </button>
+        </div>
       </div>
 
       {/* MODAL CREATE */}
@@ -238,6 +282,16 @@ function Modal({ title, form, setForm, categories, onClose, onSubmit }) {
           value={form.name}
           onChange={(e) => setForm({ ...form, name: e.target.value })}
           required
+        />
+
+        <textarea
+          className="w-full p-2 rounded bg-zinc-800 border border-white/20"
+          placeholder="Deskripsi menu (opsional)"
+          value={form.description}
+          onChange={(e) =>
+            setForm({ ...form, description: e.target.value })
+          }
+          rows={3}
         />
 
         <select
