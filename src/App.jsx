@@ -14,6 +14,7 @@ import LaporanBulanan from "./pages/laporan/bulanan";
 
 /* === DATA MASTER === */
 import MasterMenu from "./pages/master/menu";
+import MasterKaryawan from "./pages/master/karyawan"; // ⬅️ TAMBAHAN
 
 function App() {
   return (
@@ -60,6 +61,7 @@ function App() {
 
         {/* ================= DATA MASTER ================= */}
         <Route path="master/menu" element={<MasterMenu />} />
+        <Route path="master/karyawan" element={<MasterKaryawan />} /> {/* ⬅️ TAMBAHAN */}
       </Route>
 
       {/* FALLBACK */}

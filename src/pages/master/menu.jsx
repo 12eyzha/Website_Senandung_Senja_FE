@@ -1,13 +1,13 @@
 import { useEffect, useState } from "react";
 import api from "../../services/api";
 
-export default function MasterMenu() {
+export default function Menu() {
   const [menus, setMenus] = useState([]);
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  const [showEdit, setShowEdit] = useState(false);
   const [showCreate, setShowCreate] = useState(false);
+  const [showEdit, setShowEdit] = useState(false);
 
   const emptyForm = {
     id: "",
@@ -19,6 +19,8 @@ export default function MasterMenu() {
 
   const [form, setForm] = useState(emptyForm);
 
+  /* ================= FETCH ================= */
+
   useEffect(() => {
     fetchMenus();
     fetchCategories();
@@ -29,7 +31,7 @@ export default function MasterMenu() {
       const res = await api.get("/admin/menus");
       setMenus(res.data.data ?? res.data);
     } catch {
-      alert("Gagal ambil menu");
+      alert("Gagal mengambil menu");
     } finally {
       setLoading(false);
     }
@@ -40,9 +42,11 @@ export default function MasterMenu() {
       const res = await api.get("/admin/categories");
       setCategories(res.data);
     } catch {
-      alert("Gagal ambil kategori");
+      alert("Gagal mengambil kategori");
     }
   };
+
+  /* ================= ACTION ================= */
 
   const toggleAvailable = async (id) => {
     try {
@@ -69,15 +73,37 @@ export default function MasterMenu() {
       name: menu.name,
       category_id: menu.category_id,
       price: menu.price,
-      is_available: menu.is_available,
+      is_available: !!menu.is_available,
     });
     setShowEdit(true);
+  };
+
+  const submitCreate = async (e) => {
+    e.preventDefault();
+    try {
+      await api.post("/admin/menus", {
+        name: form.name,
+        category_id: form.category_id,
+        price: form.price,
+        is_available: form.is_available ? 1 : 0,
+      });
+      setShowCreate(false);
+      setForm(emptyForm);
+      fetchMenus();
+    } catch {
+      alert("Gagal tambah menu");
+    }
   };
 
   const submitEdit = async (e) => {
     e.preventDefault();
     try {
-      await api.put(`/admin/menus/${form.id}`, form);
+      await api.put(`/admin/menus/${form.id}`, {
+        name: form.name,
+        category_id: form.category_id,
+        price: form.price,
+        is_available: form.is_available ? 1 : 0,
+      });
       setShowEdit(false);
       setForm(emptyForm);
       fetchMenus();
@@ -86,27 +112,17 @@ export default function MasterMenu() {
     }
   };
 
-  const submitCreate = async (e) => {
-    e.preventDefault();
-    try {
-      await api.post("/admin/menus", form);
-      setShowCreate(false);
-      setForm(emptyForm);
-      fetchMenus();
-    } catch {
-      alert("Gagal menambahkan menu");
-    }
-  };
-
   if (loading) {
     return <p className="p-6 text-white">Loading...</p>;
   }
 
+  /* ================= RENDER ================= */
+
   return (
-    <div className="p-6 space-y-6">
+    <div className="p-6 space-y-6 text-white">
       {/* HEADER */}
       <div className="flex justify-between items-center">
-        <h1 className="text-2xl font-semibold text-amber-300">
+        <h1 className="text-2xl font-semibold text-amber-400">
           Data Master Menu
         </h1>
 
@@ -115,16 +131,16 @@ export default function MasterMenu() {
             setForm(emptyForm);
             setShowCreate(true);
           }}
-          className="px-4 py-2 bg-amber-500 text-black rounded-lg"
+          className="px-4 py-2 bg-amber-500 text-black rounded-lg font-medium"
         >
           + Tambah Menu
         </button>
       </div>
 
       {/* TABLE */}
-      <div className="bg-black/40 border border-white/10 rounded-xl overflow-x-auto">
-        <table className="w-full text-sm text-white/80">
-          <thead className="bg-white/10 text-white">
+      <div className="bg-zinc-900 border border-white/10 rounded-xl overflow-hidden">
+        <table className="w-full text-sm">
+          <thead className="bg-zinc-800 text-white">
             <tr>
               <th className="px-4 py-3 text-left">Nama</th>
               <th className="px-4 py-3 text-left">Kategori</th>
@@ -140,38 +156,34 @@ export default function MasterMenu() {
                 key={menu.id}
                 className="border-t border-white/10 hover:bg-white/5"
               >
-                <td className="px-4 py-3 font-medium">
-                  {menu.name}
-                </td>
-                <td className="px-4 py-3">
-                  {menu.category?.name}
-                </td>
+                <td className="px-4 py-3">{menu.name}</td>
+                <td className="px-4 py-3">{menu.category?.name}</td>
                 <td className="px-4 py-3">
                   Rp {Number(menu.price).toLocaleString("id-ID")}
                 </td>
                 <td className="px-4 py-3 text-center">
                   <button
                     onClick={() => toggleAvailable(menu.id)}
-                    className={`px-3 py-1 rounded-full text-xs
+                    className={`px-3 py-1 rounded-full text-xs font-medium
                       ${
                         menu.is_available
-                          ? "bg-green-500/20 text-green-300"
-                          : "bg-red-500/20 text-red-300"
+                          ? "bg-green-500/20 text-green-400"
+                          : "bg-red-500/20 text-red-400"
                       }`}
                   >
-                    {menu.is_available ? "Available" : "Off"}
+                    {menu.is_available ? "Aktif" : "Nonaktif"}
                   </button>
                 </td>
                 <td className="px-4 py-3 text-center space-x-2">
                   <button
                     onClick={() => openEdit(menu)}
-                    className="px-3 py-1 bg-blue-500/20 text-blue-300 rounded text-xs"
+                    className="px-3 py-1 bg-blue-500/20 text-blue-400 rounded text-xs"
                   >
                     Edit
                   </button>
                   <button
                     onClick={() => deleteMenu(menu.id)}
-                    className="px-3 py-1 bg-red-500/20 text-red-300 rounded text-xs"
+                    className="px-3 py-1 bg-red-500/20 text-red-400 rounded text-xs"
                   >
                     Hapus
                   </button>
@@ -209,31 +221,27 @@ export default function MasterMenu() {
   );
 }
 
-/* ================= MODAL COMPONENT ================= */
+/* ================= MODAL ================= */
 
 function Modal({ title, form, setForm, categories, onClose, onSubmit }) {
   return (
     <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50">
       <form
         onSubmit={onSubmit}
-        className="bg-zinc-900 p-6 rounded-xl w-full max-w-md space-y-4"
+        className="bg-zinc-900 p-6 rounded-xl w-full max-w-md space-y-4 text-white"
       >
-        <h2 className="text-lg font-semibold text-amber-300">
-          {title}
-        </h2>
+        <h2 className="text-lg font-semibold text-amber-400">{title}</h2>
 
         <input
-          className="w-full p-2 rounded bg-black border border-white/20"
+          className="w-full p-2 rounded bg-zinc-800 border border-white/20"
           placeholder="Nama Menu"
           value={form.name}
-          onChange={(e) =>
-            setForm({ ...form, name: e.target.value })
-          }
+          onChange={(e) => setForm({ ...form, name: e.target.value })}
           required
         />
 
         <select
-          className="w-full p-2 rounded bg-black border border-white/20"
+          className="w-full p-2 rounded bg-zinc-800 border border-white/20"
           value={form.category_id}
           onChange={(e) =>
             setForm({ ...form, category_id: e.target.value })
@@ -250,16 +258,26 @@ function Modal({ title, form, setForm, categories, onClose, onSubmit }) {
 
         <input
           type="number"
-          className="w-full p-2 rounded bg-black border border-white/20"
+          className="w-full p-2 rounded bg-zinc-800 border border-white/20"
           placeholder="Harga"
           value={form.price}
-          onChange={(e) =>
-            setForm({ ...form, price: e.target.value })
-          }
+          onChange={(e) => setForm({ ...form, price: e.target.value })}
           required
         />
 
-        <div className="flex justify-end gap-3">
+        <label className="flex items-center gap-3 text-sm">
+          <input
+            type="checkbox"
+            checked={form.is_available}
+            onChange={(e) =>
+              setForm({ ...form, is_available: e.target.checked })
+            }
+            className="accent-amber-500"
+          />
+          Menu Aktif
+        </label>
+
+        <div className="flex justify-end gap-3 pt-2">
           <button
             type="button"
             onClick={onClose}
@@ -267,7 +285,7 @@ function Modal({ title, form, setForm, categories, onClose, onSubmit }) {
           >
             Batal
           </button>
-          <button className="px-4 py-2 bg-amber-500 text-black rounded">
+          <button className="px-4 py-2 bg-amber-500 text-black rounded font-medium">
             Simpan
           </button>
         </div>
