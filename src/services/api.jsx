@@ -1,8 +1,10 @@
 import axios from "axios";
 
 const api = axios.create({
-  baseURL: "http://localhost/coffeeshop-senandung-backend/public/api",
+  baseURL: import.meta.env.VITE_API_URL,
+  withCredentials: true,
   headers: {
+    Accept: "application/json",
     "Content-Type": "application/json",
   },
 });
@@ -18,9 +20,7 @@ api.interceptors.request.use(
 
     return config;
   },
-  (error) => {
-    return Promise.reject(error);
-  }
+  (error) => Promise.reject(error)
 );
 
 export default api;
