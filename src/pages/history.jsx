@@ -29,9 +29,9 @@ export default function History() {
     if (!reason) return;
 
     try {
-       await api.patch(`/admin/transactions/${id}/cancel`, {
-    cancel_reason: reason,
-  });
+      await api.patch(`/admin/transactions/${id}/cancel`, {
+        cancel_reason: reason,
+      });
       alert("Transaksi berhasil dibatalkan");
       fetchHistory();
     } catch (err) {
@@ -107,7 +107,7 @@ export default function History() {
                 <th className="px-4 py-4 text-left">Pembayaran</th>
                 <th className="px-4 py-4 text-left">Status</th>
                 <th className="px-4 py-4 text-left">Tanggal</th>
-                {user?.role === "admin" && (
+                {(user?.role === "admin" || user?.role === "kasir") && (
                   <th className="px-4 py-4 text-center whitespace-nowrap">
                     Aksi
                   </th>
@@ -171,10 +171,10 @@ export default function History() {
                     {new Date(trx.created_at).toLocaleString("id-ID")}
                   </td>
 
-                  {user?.role === "admin" && (
+                  {(user?.role === "admin" || user?.role === "kasir") && (
                     <td className="px-4 py-4 whitespace-nowrap">
                       <div className="flex justify-center gap-3">
-                        {trx.status !== "cancelled" && (
+                        {trx.status !== "cancelled" && user?.role === "admin" && (
                           <button
                             onClick={() => handleCancel(trx.id)}
                             className="px-3 py-1.5 bg-red-500/20 text-red-300 rounded-md hover:bg-red-500/30 transition text-xs"
@@ -183,6 +183,7 @@ export default function History() {
                           </button>
                         )}
 
+                        {/* Tombol PDF untuk semua role */}
                         <button
                           onClick={() => exportTransaction(trx.id)}
                           className="px-3 py-1.5 bg-white/10 text-white rounded-md hover:bg-white/20 transition text-xs"
